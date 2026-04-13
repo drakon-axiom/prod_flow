@@ -10,9 +10,9 @@ import { Select } from '../../../components/ui/Select'
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner'
 import { useToast } from '../../../components/ui/Toast'
 import { PlusIcon } from '@heroicons/react/24/outline'
-import { FIELD_TYPES } from '../../../types/constants'
+import { FIELD_TYPE_OPTIONS } from '../../../types/constants'
+import { safeJsonParse } from '../../../utils/safe-json'
 
-const FIELD_TYPE_OPTIONS = FIELD_TYPES.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))
 
 interface FormState {
   id?: string
@@ -54,11 +54,20 @@ export default function FieldTemplatesPage() {
 
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
+    let parsedOptions: unknown = null
+    if (form.options) {
+      const { data, error } = safeJsonParse(form.options)
+      if (error) {
+        toast('error', `Invalid JSON in options: ${error}`)
+        return
+      }
+      parsedOptions = data
+    }
     const payload = {
       name: form.name,
       label: form.label,
       field_type: form.field_type,
-      options: form.options ? JSON.parse(form.options) : null,
+      options: parsedOptions as import('../../../lib/database.types').Json | null,
       is_required: form.is_required,
     }
 

@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
 
 export function useDashboardStats() {
   return useQuery({
-    queryKey: ['dashboard-stats'],
+    queryKey: queryKeys.dashboard.stats,
     queryFn: async () => {
       const [runsRes, queueRes, completedRes, recentRes] = await Promise.all([
         supabase.from('production_runs').select('id', { count: 'exact', head: true }).eq('status', 'in_progress'),
@@ -25,5 +26,6 @@ export function useDashboardStats() {
       }
     },
     refetchInterval: 30000,
+    refetchIntervalInBackground: false,
   })
 }

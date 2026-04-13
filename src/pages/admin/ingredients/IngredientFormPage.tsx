@@ -7,16 +7,7 @@ import { Select } from '../../../components/ui/Select'
 import { Card } from '../../../components/ui/Card'
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner'
 import { useToast } from '../../../components/ui/Toast'
-
-const UNITS = [
-  { value: 'g', label: 'Grams (g)' },
-  { value: 'kg', label: 'Kilograms (kg)' },
-  { value: 'ml', label: 'Milliliters (ml)' },
-  { value: 'L', label: 'Liters (L)' },
-  { value: 'oz', label: 'Ounces (oz)' },
-  { value: 'lb', label: 'Pounds (lb)' },
-  { value: 'each', label: 'Each' },
-]
+import { UNIT_OPTIONS } from '../../../types/constants'
 
 export default function IngredientFormPage() {
   const { id } = useParams()
@@ -100,7 +91,7 @@ export default function IngredientFormPage() {
           <Input label="Name" value={form.name} onChange={(e) => update('name', e.target.value)} required />
           <div className="grid grid-cols-2 gap-4">
             <Input label="SKU" value={form.sku} onChange={(e) => update('sku', e.target.value)} placeholder="Optional" />
-            <Select label="Unit" value={form.unit} onChange={(e) => update('unit', e.target.value)} options={UNITS} />
+            <Select label="Unit" value={form.unit} onChange={(e) => update('unit', e.target.value)} options={UNIT_OPTIONS as unknown as { value: string; label: string }[]} />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <Input label="Density" type="number" step="0.000001" value={form.density} onChange={(e) => update('density', e.target.value)} placeholder="Optional" />

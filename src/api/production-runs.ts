@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
+import { RPC } from '../types/constants'
 
-const KEYS = {
-  all: ['production-runs'] as const,
-  detail: (id: string) => ['production-runs', id] as const,
-}
+const KEYS = queryKeys.runs
+
 
 export function useRuns(statusFilter?: string) {
   return useQuery({
@@ -55,7 +55,7 @@ export function useCompleteStep() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (args: { run_id: string; step_id: string; user_id: string; inputs: { id: string; value: string }[] }) => {
-      const { data, error } = await supabase.rpc('complete_run_step', {
+      const { data, error } = await supabase.rpc(RPC.COMPLETE_STEP, {
         p_run_id: args.run_id,
         p_step_id: args.step_id,
         p_user_id: args.user_id,
@@ -67,7 +67,7 @@ export function useCompleteStep() {
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: KEYS.detail(vars.run_id) })
       qc.invalidateQueries({ queryKey: KEYS.all })
-      qc.invalidateQueries({ queryKey: ['production-queue'] })
+      qc.invalidateQueries({ queryKey: queryKeys.queue.all })
     },
   })
 }

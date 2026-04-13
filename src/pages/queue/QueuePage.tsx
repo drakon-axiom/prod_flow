@@ -13,6 +13,7 @@ import { Select } from '../../components/ui/Select'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
 import { useToast } from '../../components/ui/Toast'
 import { PlusIcon, PlayIcon } from '@heroicons/react/24/outline'
+import { RPC } from '../../types/constants'
 import { QUEUE_STATUS_COLORS, type QueueStatus } from '../../types/constants'
 import { supabase } from '../../lib/supabase'
 
@@ -31,6 +32,7 @@ export default function QueuePage() {
   const updateItem = useUpdateQueueItem()
 
   const [form, setForm] = useState({ formula_id: '', batch_size: '', priority: '0', due_date: '', notes: '' })
+  const [startingRunId, setStartingRunId] = useState<string | null>(null)
 
   const selectedFormula = formulas?.find((f) => f.id === form.formula_id)
   const currentVersion = selectedFormula
@@ -68,9 +70,10 @@ export default function QueuePage() {
   }
 
   async function handleStartRun(queueItemId: string) {
-    if (!user) return
+    if (!user || startingRunId) return
+    setStartingRunId(queueItemId)
     try {
-      const { data, error } = await supabase.rpc('start_production_run', {
+      const { data, error } = await supabase.rpc(RPC.START_RUN, {
         p_queue_item_id: queueItemId,
         p_user_id: user.id,
       })
@@ -79,6 +82,8 @@ export default function QueuePage() {
       navigate(`/runs/${data}/execute`)
     } catch (err: unknown) {
       toast('error', err instanceof Error ? err.message : 'Failed to start run')
+    } finally {
+      setStartingRunId(null)
     }
   }
 
@@ -146,7 +151,7 @@ export default function QueuePage() {
               render: (r) =>
                 (r.status === 'queued' || r.status === 'ready') ? (
                   <div className="flex gap-2">
-                    <Button size="sm" onClick={(e) => { e.stopPropagation(); handleStartRun(r.id) }}>
+                    <Button size="sm" loading={startingRunId === r.id} disabled={!!startingRunId} onClick={(e) => { e.stopPropagation(); handleStartRun(r.id) }}>
                       <PlayIcon className="h-3.5 w-3.5 mr-1" />
                       Start
                     </Button>

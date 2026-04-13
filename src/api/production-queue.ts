@@ -1,8 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
 import type { TablesInsert } from '../types'
 
-const KEYS = { all: ['production-queue'] as const }
+const KEYS = queryKeys.queue
 
 export function useQueue(statusFilter?: string) {
   return useQuery({

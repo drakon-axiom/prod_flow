@@ -3,7 +3,7 @@ import { Button } from '../ui/Button'
 import { Select } from '../ui/Select'
 import { TrashIcon, PlusIcon, ChevronDownIcon, ChevronRightIcon } from '@heroicons/react/24/outline'
 import { useState } from 'react'
-import { FIELD_TYPES } from '../../types/constants'
+import { FIELD_TYPE_OPTIONS } from '../../types/constants'
 import type { Tables } from '../../types'
 
 interface StepField {
@@ -30,7 +30,6 @@ interface StepCardProps {
   onRemove: (index: number) => void
 }
 
-const FIELD_TYPE_OPTIONS = FIELD_TYPES.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }))
 
 export function StepCard({ step, index, fieldTemplates, onChange, onRemove }: StepCardProps) {
   const [expanded, setExpanded] = useState(true)

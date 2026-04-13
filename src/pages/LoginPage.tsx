@@ -39,7 +39,7 @@ export default function LoginPage() {
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            placeholder="admin@prodflow.local"
+            placeholder="you@example.com"
             required
           />
           <Input

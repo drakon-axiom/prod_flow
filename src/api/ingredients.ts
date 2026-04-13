@@ -1,11 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
 import type { TablesInsert, TablesUpdate } from '../types'
 
-const KEYS = {
-  all: ['ingredients'] as const,
-  detail: (id: string) => ['ingredients', id] as const,
-}
+const KEYS = queryKeys.ingredients
 
 export function useIngredients(showInactive = false) {
   return useQuery({

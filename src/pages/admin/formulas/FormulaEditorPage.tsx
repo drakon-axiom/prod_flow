@@ -1,6 +1,6 @@
-import { useState, type FormEvent } from 'react'
+import { useState, useEffect, type FormEvent } from 'react'
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
-import { useFormula, useCreateFormula, useCreateFormulaVersion } from '../../../api/formulas'
+import { useFormula, useCreateFormula, useCreateFormulaVersion, type FormulaVersionDetail } from '../../../api/formulas'
 import { useIngredients } from '../../../api/ingredients'
 import { useFieldTemplates } from '../../../api/field-templates'
 import { Button } from '../../../components/ui/Button'
@@ -12,15 +12,8 @@ import { useToast } from '../../../components/ui/Toast'
 import { IngredientRow } from '../../../components/formulas/IngredientRow'
 import { StepCard } from '../../../components/formulas/StepCard'
 import { PlusIcon } from '@heroicons/react/24/outline'
-
-const BATCH_UNITS = [
-  { value: 'g', label: 'Grams' },
-  { value: 'kg', label: 'Kilograms' },
-  { value: 'ml', label: 'Milliliters' },
-  { value: 'L', label: 'Liters' },
-  { value: 'oz', label: 'Ounces' },
-  { value: 'lb', label: 'Pounds' },
-]
+import { safeJsonParse } from '../../../utils/safe-json'
+import { UNIT_OPTIONS } from '../../../types/constants'
 
 interface IngredientInput {
   ingredient_id: string
@@ -66,18 +59,11 @@ export default function FormulaEditorPage() {
   const [versionNotes, setVersionNotes] = useState('')
   const [ingredients, setIngredients] = useState<IngredientInput[]>([])
   const [steps, setSteps] = useState<StepInput[]>([])
-  const [initialized, setInitialized] = useState(false)
-
   // Pre-fill from existing formula when creating new version
-  if (isEdit && existingFormula && !initialized) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const versions = (existingFormula.versions ?? []) as any[]
+  useEffect(() => {
+    if (!isEdit || !existingFormula || !isNewVersion) return
+    const versions = (existingFormula.versions ?? []) as FormulaVersionDetail[]
     const currentVersion = versions[0]
-    if (!isNewVersion) {
-      // Viewing/editing — redirect to detail page
-      navigate(`/admin/formulas/${id}`, { replace: true })
-      return null
-    }
     if (currentVersion) {
       setName(existingFormula.name)
       setProductName(existingFormula.product_name)
@@ -85,19 +71,19 @@ export default function FormulaEditorPage() {
       setBaseBatchSize(String(currentVersion.base_batch_size))
       setBaseBatchUnit(currentVersion.base_batch_unit)
       setIngredients(
-        (currentVersion.ingredients ?? []).map((i: any) => ({
+        (currentVersion.ingredients ?? []).map((i) => ({
           ingredient_id: i.ingredient_id,
           quantity: String(i.quantity),
           notes: i.notes ?? '',
         })),
       )
       setSteps(
-        (currentVersion.steps ?? []).map((s: any) => ({
+        (currentVersion.steps ?? []).map((s) => ({
           title: s.title,
           instructions: s.instructions ?? '',
           requires_confirmation: s.requires_confirmation,
           requires_quantity_entry: s.requires_quantity_entry,
-          fields: (s.fields ?? []).map((f: any) => ({
+          fields: (s.fields ?? []).map((f) => ({
             label: f.label,
             field_type: f.field_type,
             template_id: f.template_id ?? '',
@@ -107,7 +93,12 @@ export default function FormulaEditorPage() {
         })),
       )
     }
-    setInitialized(true)
+  }, [existingFormula, isEdit, isNewVersion])
+
+  // Redirect to detail page if editing without newVersion flag
+  if (isEdit && existingFormula && !isNewVersion) {
+    navigate(`/admin/formulas/${id}`, { replace: true })
+    return null
   }
 
   if ((isEdit && loadingFormula) || loadingIngredients || loadingTemplates) {
@@ -143,6 +134,23 @@ export default function FormulaEditorPage() {
   function handleSubmit(e: FormEvent) {
     e.preventDefault()
 
+    const batchNum = Number(baseBatchSize)
+    if (!batchNum || batchNum <= 0) {
+      toast('error', 'Batch size must be a positive number')
+      return
+    }
+
+    // Validate ingredient quantities
+    for (const ing of ingredients) {
+      if (ing.ingredient_id && ing.quantity) {
+        const qty = Number(ing.quantity)
+        if (!qty || qty <= 0) {
+          toast('error', 'All ingredient quantities must be positive numbers')
+          return
+        }
+      }
+    }
+
     const parsedIngredients = ingredients
       .filter((i) => i.ingredient_id && i.quantity)
       .map((i, idx) => ({
@@ -151,6 +159,19 @@ export default function FormulaEditorPage() {
         sort_order: idx,
         notes: i.notes || undefined,
       }))
+
+    // Validate JSON options before submitting
+    for (const s of steps) {
+      for (const f of s.fields) {
+        if (f.options) {
+          const { error } = safeJsonParse(f.options)
+          if (error) {
+            toast('error', `Invalid JSON in field "${f.label}" options: ${error}`)
+            return
+          }
+        }
+      }
+    }
 
     const parsedSteps = steps.map((s, idx) => ({
       step_number: idx + 1,
@@ -163,7 +184,7 @@ export default function FormulaEditorPage() {
         label: f.label,
         field_type: f.field_type,
         template_id: f.template_id || undefined,
-        options: f.options ? JSON.parse(f.options) : undefined,
+        options: f.options ? safeJsonParse(f.options).data : undefined,
         is_required: f.is_required,
         sort_order: fi,
       })),
@@ -243,8 +264,8 @@ export default function FormulaEditorPage() {
             {isNewVersion ? 'Version Settings' : 'Batch Settings'}
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <Input label="Base Batch Size" type="number" step="0.0001" value={baseBatchSize} onChange={(e) => setBaseBatchSize(e.target.value)} required />
-            <Select label="Batch Unit" value={baseBatchUnit} onChange={(e) => setBaseBatchUnit(e.target.value)} options={BATCH_UNITS} />
+            <Input label="Base Batch Size" type="number" step="0.0001" min="0.0001" value={baseBatchSize} onChange={(e) => setBaseBatchSize(e.target.value)} required />
+            <Select label="Batch Unit" value={baseBatchUnit} onChange={(e) => setBaseBatchUnit(e.target.value)} options={UNIT_OPTIONS as unknown as { value: string; label: string }[]} />
           </div>
           {isNewVersion && (
             <div className="mt-4">

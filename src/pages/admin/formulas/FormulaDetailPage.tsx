@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useFormula } from '../../../api/formulas'
+import { useFormula, type FormulaVersionDetail } from '../../../api/formulas'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { Badge } from '../../../components/ui/Badge'
@@ -17,12 +17,11 @@ export default function FormulaDetailPage() {
   if (error) return <p className="text-red-600">Error loading formula: {error.message}</p>
   if (!formula) return <p>Formula not found</p>
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const versions = (formula.versions ?? []) as any[]
+  const versions = (formula.versions ?? []) as FormulaVersionDetail[]
   const version = versions[selectedVersionIdx]
   const isCurrent = version?.id === formula.current_version_id
 
-  const versionOptions = versions.map((v: { version_number: number; id: string }, i: number) => ({
+  const versionOptions = versions.map((v, i) => ({
     value: String(i),
     label: `v${v.version_number}${v.id === formula.current_version_id ? ' (current)' : ''}`,
   }))
@@ -98,7 +97,7 @@ export default function FormulaDetailPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {version.ingredients?.map((fi: any) => {
+                {version.ingredients?.map((fi) => {
                   const ing = Array.isArray(fi.ingredient) ? fi.ingredient[0] : fi.ingredient
                   return (
                     <tr key={fi.id}>
@@ -120,7 +119,7 @@ export default function FormulaDetailPage() {
               Steps ({version.steps?.length ?? 0})
             </h3>
             <div className="space-y-4">
-              {version.steps?.map((step: any) => (
+              {version.steps?.map((step) => (
                 <div key={step.id} className="border border-gray-200 rounded-lg p-4">
                   <div className="flex items-center gap-2 mb-2">
                     <Badge className="bg-gray-100 text-gray-700">Step {step.step_number}</Badge>
@@ -137,7 +136,7 @@ export default function FormulaDetailPage() {
                     <div className="mt-2 border-t pt-2">
                       <p className="text-xs font-medium text-gray-500 mb-1">Fields:</p>
                       <div className="flex flex-wrap gap-2">
-                        {step.fields.map((f: any) => (
+                        {step.fields.map((f) => (
                           <Badge key={f.id} className="bg-blue-50 text-blue-700">
                             {f.label} ({f.field_type}){f.is_required ? ' *' : ''}
                           </Badge>

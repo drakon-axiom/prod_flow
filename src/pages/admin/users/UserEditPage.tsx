@@ -45,7 +45,7 @@ export default function UserEditPage() {
 
   function handleSetPassword(e: FormEvent) {
     e.preventDefault()
-    if (newPassword.length < 6) return
+    if (newPassword.length < 8) return
     setPasswordMutation.mutate(
       { user_id: id!, password: newPassword },
       {
@@ -96,9 +96,9 @@ export default function UserEditPage() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Minimum 6 characters"
-            minLength={6}
+            minLength={8}
           />
-          <Button type="submit" loading={setPasswordMutation.isPending} disabled={newPassword.length < 6}>
+          <Button type="submit" loading={setPasswordMutation.isPending} disabled={newPassword.length < 8}>
             Set New Password
           </Button>
         </form>

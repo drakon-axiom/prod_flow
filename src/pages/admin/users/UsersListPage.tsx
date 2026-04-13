@@ -26,7 +26,7 @@ export default function UsersListPage() {
   const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
 
   function handleSetPassword() {
-    if (!passwordModal || newPassword.length < 6) return
+    if (!passwordModal || newPassword.length < 8) return
     setPassword.mutate(
       { user_id: passwordModal.id, password: newPassword },
       {
@@ -152,10 +152,10 @@ export default function UsersListPage() {
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
             placeholder="Minimum 6 characters"
-            minLength={6}
+            minLength={8}
           />
           <div className="flex gap-3">
-            <Button onClick={handleSetPassword} loading={setPassword.isPending} disabled={newPassword.length < 6}>
+            <Button onClick={handleSetPassword} loading={setPassword.isPending} disabled={newPassword.length < 8}>
               Set Password
             </Button>
             <Button variant="secondary" onClick={() => { setPasswordModal(null); setNewPassword('') }}>

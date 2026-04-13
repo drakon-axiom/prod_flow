@@ -32,7 +32,7 @@ export default function UserFormPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input label="Full Name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
           <Input label="Email" type="email" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} required />
-          <Input label="Temporary Password" type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} required minLength={6} />
+          <Input label="Temporary Password" type="password" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} required minLength={8} />
           <Select label="Role" value={form.role} onChange={(e) => setForm((f) => ({ ...f, role: e.target.value }))} options={[{ value: 'operator', label: 'Operator' }, { value: 'admin', label: 'Admin' }]} />
           <div className="flex gap-3 pt-2">
             <Button type="submit" loading={createMutation.isPending}>Create User</Button>

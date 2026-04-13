@@ -1,10 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
 import type { TablesInsert, TablesUpdate } from '../types'
 
-const KEYS = {
-  all: ['field-templates'] as const,
-}
+const KEYS = queryKeys.fieldTemplates
 
 export function useFieldTemplates(showInactive = false) {
   return useQuery({

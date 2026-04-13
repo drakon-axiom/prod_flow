@@ -1,7 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
 
-const KEYS = { all: ['users'] as const }
+const KEYS = queryKeys.users
 
 async function invokeUserFn(body: Record<string, unknown>) {
   const { data, error } = await supabase.functions.invoke('create-user', { body })

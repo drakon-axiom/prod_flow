@@ -1,10 +1,55 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '../lib/supabase'
+import { queryKeys } from '../lib/query-keys'
+import type { Json } from '../lib/database.types'
 
-const KEYS = {
-  all: ['formulas'] as const,
-  detail: (id: string) => ['formulas', id] as const,
+export interface FormulaIngredientDetail {
+  id: string
+  formula_version_id: string
+  ingredient_id: string
+  quantity: number
+  sort_order: number
+  notes: string | null
+  ingredient: { id: string; name: string; unit: string; sku: string | null } | null
 }
+
+export interface FormulaStepFieldDetail {
+  id: string
+  formula_step_id: string
+  template_id: string | null
+  label: string
+  field_type: string
+  options: Json | null
+  is_required: boolean
+  sort_order: number
+}
+
+export interface FormulaStepDetail {
+  id: string
+  formula_version_id: string
+  step_number: number
+  title: string
+  instructions: string | null
+  requires_confirmation: boolean
+  requires_quantity_entry: boolean
+  sort_order: number
+  fields: FormulaStepFieldDetail[]
+}
+
+export interface FormulaVersionDetail {
+  id: string
+  formula_id: string
+  version_number: number
+  base_batch_size: number
+  base_batch_unit: string
+  notes: string | null
+  created_by: string | null
+  created_at: string
+  ingredients: FormulaIngredientDetail[]
+  steps: FormulaStepDetail[]
+}
+
+const KEYS = queryKeys.formulas
 
 export function useFormulas() {
   return useQuery({
@@ -47,31 +92,52 @@ export function useFormula(id: string | undefined) {
         .order('version_number', { ascending: false })
       if (vErr) throw vErr
 
-      // For each version, fetch ingredients + steps + fields
-      const versions = await Promise.all((rawVersions ?? []).map(async (v) => {
-        const [ingRes, stepsRes] = await Promise.all([
-          supabase
-            .from('formula_ingredients')
-            .select('*, ingredient:ingredients(id, name, unit, sku)')
-            .eq('formula_version_id', v.id)
-            .order('sort_order'),
-          supabase
-            .from('formula_steps')
-            .select('*, fields:formula_step_fields(*)')
-            .eq('formula_version_id', v.id)
-            .order('sort_order'),
-        ])
-        const ingredients = (ingRes.data ?? []).map((fi: any) => ({
+      // Batch-fetch ingredients and steps for all versions in 2 queries (not N*2)
+      const versionIds = (rawVersions ?? []).map((v) => v.id)
+
+      const [allIngRes, allStepsRes] = versionIds.length > 0
+        ? await Promise.all([
+            supabase
+              .from('formula_ingredients')
+              .select('*, ingredient:ingredients(id, name, unit, sku)')
+              .in('formula_version_id', versionIds)
+              .order('sort_order'),
+            supabase
+              .from('formula_steps')
+              .select('*, fields:formula_step_fields(*)')
+              .in('formula_version_id', versionIds)
+              .order('sort_order'),
+          ])
+        : [{ data: [] }, { data: [] }]
+
+      // Group by version ID
+      const ingByVersion = new Map<string, FormulaIngredientDetail[]>()
+      for (const fi of (allIngRes.data ?? [])) {
+        const vid = fi.formula_version_id
+        if (!ingByVersion.has(vid)) ingByVersion.set(vid, [])
+        ingByVersion.get(vid)!.push({
           ...fi,
           ingredient: Array.isArray(fi.ingredient) ? fi.ingredient[0] : fi.ingredient,
-        }))
-        const steps = (stepsRes.data ?? []).map((s: any) => ({
+        })
+      }
+
+      const stepsByVersion = new Map<string, FormulaStepDetail[]>()
+      for (const s of (allStepsRes.data ?? [])) {
+        const vid = s.formula_version_id
+        if (!stepsByVersion.has(vid)) stepsByVersion.set(vid, [])
+        stepsByVersion.get(vid)!.push({
           ...s,
-          fields: (s.fields ?? []).sort((a: any, b: any) => a.sort_order - b.sort_order),
-        }))
-        return { ...v, ingredients, steps }
+          fields: ((s.fields ?? []) as FormulaStepFieldDetail[]).sort((a, b) => a.sort_order - b.sort_order),
+        })
+      }
+
+      const versions: FormulaVersionDetail[] = (rawVersions ?? []).map((v) => ({
+        ...v,
+        ingredients: ingByVersion.get(v.id) ?? [],
+        steps: stepsByVersion.get(v.id) ?? [],
       }))
-      return { ...data, versions }
+
+      return { ...data, versions } as typeof data & { versions: FormulaVersionDetail[] }
     },
   })
 }

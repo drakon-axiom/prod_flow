@@ -28,3 +28,24 @@ export const RUN_STATUS_COLORS: Record<RunStatus, string> = {
   completed: 'bg-green-100 text-green-700',
   cancelled: 'bg-red-100 text-red-700',
 }
+
+export const UNIT_OPTIONS = [
+  { value: 'g', label: 'Grams (g)' },
+  { value: 'kg', label: 'Kilograms (kg)' },
+  { value: 'ml', label: 'Milliliters (ml)' },
+  { value: 'L', label: 'Liters (L)' },
+  { value: 'oz', label: 'Ounces (oz)' },
+  { value: 'lb', label: 'Pounds (lb)' },
+  { value: 'each', label: 'Each' },
+] as const
+
+export const FIELD_TYPE_OPTIONS = FIELD_TYPES.map((t) => ({
+  value: t,
+  label: t.charAt(0).toUpperCase() + t.slice(1),
+}))
+
+export const RPC = {
+  START_RUN: 'start_production_run',
+  COMPLETE_STEP: 'complete_run_step',
+  CALCULATE_BATCH: 'calculate_batch',
+} as const
