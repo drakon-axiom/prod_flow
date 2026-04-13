@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useUsers, useUpdateUser, useSetPassword, useSendResetEmail, useDeleteUser } from '../../../api/users'
+import { useUsers, useUpdateUser, useSetPassword, useDeleteUser } from '../../../api/users'
 import { useAuth } from '../../../hooks/useAuth'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
@@ -19,7 +19,6 @@ export default function UsersListPage() {
   const { data: users, isLoading } = useUsers()
   const updateUser = useUpdateUser()
   const setPassword = useSetPassword()
-  const sendResetEmail = useSendResetEmail()
   const deleteUser = useDeleteUser()
 
   const [passwordModal, setPasswordModal] = useState<{ id: string; name: string } | null>(null)

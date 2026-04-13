@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useUsers, useUpdateUser, useSetPassword, useSendResetEmail } from '../../../api/users'
+import { useUsers, useUpdateUser, useSetPassword } from '../../../api/users'
 import { Button } from '../../../components/ui/Button'
 import { Input } from '../../../components/ui/Input'
 import { Select } from '../../../components/ui/Select'
@@ -15,7 +15,6 @@ export default function UserEditPage() {
   const { data: users, isLoading } = useUsers()
   const updateUser = useUpdateUser()
   const setPasswordMutation = useSetPassword()
-  const sendResetMutation = useSendResetEmail()
 
   const user = users?.find((u) => u.id === id)
 
@@ -59,24 +58,6 @@ export default function UserEditPage() {
     )
   }
 
-  function handleSendResetEmail() {
-    // We need the user's email — get it from auth. For now we'll use the edge function.
-    // Since we don't have the email stored in profiles, we'll add a note.
-    sendResetMutation.mutate(
-      { email: '' }, // We don't have email in profiles — see note below
-      {
-        onSuccess: (data) => {
-          if (data?.link) {
-            toast('success', 'Reset link generated — copy it from the response')
-            navigator.clipboard.writeText(data.link).catch(() => {})
-          } else {
-            toast('info', 'Reset email sent')
-          }
-        },
-        onError: (err) => toast('error', err.message),
-      },
-    )
-  }
 
   return (
     <div className="max-w-xl">
