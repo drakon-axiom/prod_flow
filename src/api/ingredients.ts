@@ -91,6 +91,47 @@ export function useDeleteIngredient() {
   })
 }
 
+export function useBulkDeleteIngredients() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (ids: string[]) => {
+      const errors: string[] = []
+      for (const id of ids) {
+        const { count } = await supabase
+          .from('formula_ingredients')
+          .select('id', { count: 'exact', head: true })
+          .eq('ingredient_id', id)
+        if (count && count > 0) {
+          const { data: ing } = await supabase.from('ingredients').select('name').eq('id', id).single()
+          errors.push(ing?.name ?? id)
+          continue
+        }
+        await supabase.from('run_materials').update({ ingredient_id: null }).eq('ingredient_id', id)
+        const { error } = await supabase.from('ingredients').delete().eq('id', id)
+        if (error) errors.push(error.message)
+      }
+      if (errors.length > 0) {
+        throw new Error(`Could not delete (used in formulas): ${errors.join(', ')}`)
+      }
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
+export function useBulkUpdateIngredients() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ ids, updates }: { ids: string[]; updates: TablesUpdate<'ingredients'> }) => {
+      const { error } = await supabase
+        .from('ingredients')
+        .update(updates)
+        .in('id', ids)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
 export function useToggleIngredient() {
   const qc = useQueryClient()
   return useMutation({
