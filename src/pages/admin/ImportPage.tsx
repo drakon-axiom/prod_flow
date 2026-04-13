@@ -48,18 +48,60 @@ export default function ImportPage() {
         if (error) { toast('error', 'Invalid JSON file'); return }
         parseAndPreview(data)
       } else if (isCsv) {
-        if (mode === 'formulas' || mode === 'combined') {
-          toast('error', 'CSV is only supported for ingredients. Use JSON for formulas.')
-          return
-        }
         const rows = parseCsv(text)
-        parseAndPreview(rows)
+        parseAndPreviewCsv(rows)
       } else {
         toast('error', 'Please upload a .json or .csv file')
       }
     }
     reader.readAsText(file)
     if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  function parseCsvJsonField(value: string | undefined): unknown {
+    if (!value) return []
+    const trimmed = value.trim()
+    if (!trimmed) return []
+    const { data } = safeJsonParse(trimmed)
+    return data ?? []
+  }
+
+  function parseAndPreviewCsv(rows: Record<string, string>[]) {
+    if (mode === 'ingredients') {
+      parseAndPreview(rows)
+    } else if (mode === 'formulas') {
+      // CSV formulas have ingredients_json and steps_json columns
+      const formulas = rows.map((row) => ({
+        name: row.name,
+        product_name: row.product_name,
+        description: row.description,
+        base_batch_size: Number(row.base_batch_size),
+        base_batch_unit: row.base_batch_unit,
+        ingredients: parseCsvJsonField(row.ingredients_json),
+        steps: parseCsvJsonField(row.steps_json),
+      }))
+      parseAndPreview(formulas)
+    } else {
+      // Combined CSV uses a "type" column to distinguish rows
+      const ingredients: Record<string, unknown>[] = []
+      const formulas: Record<string, unknown>[] = []
+      for (const row of rows) {
+        if (row.type === 'ingredient') {
+          ingredients.push({
+            name: row.name, sku: row.sku, unit: row.unit,
+            density: row.density || null, cost_per_unit: row.cost_per_unit || null, notes: row.notes,
+          })
+        } else if (row.type === 'formula') {
+          formulas.push({
+            name: row.name, product_name: row.product_name, description: row.description,
+            base_batch_size: Number(row.base_batch_size), base_batch_unit: row.base_batch_unit,
+            ingredients: parseCsvJsonField(row.ingredients_json),
+            steps: parseCsvJsonField(row.steps_json),
+          })
+        }
+      }
+      parseAndPreview({ ingredients, formulas })
+    }
   }
 
   function parseAndPreview(data: unknown) {
@@ -249,8 +291,14 @@ export default function ImportPage() {
           <Button variant="secondary" size="sm" onClick={() => window.open('/templates/formulas-template.json')}>
             <ArrowDownTrayIcon className="h-4 w-4 mr-1" /> Formulas JSON
           </Button>
+          <Button variant="secondary" size="sm" onClick={() => window.open('/templates/formulas-template.csv')}>
+            <ArrowDownTrayIcon className="h-4 w-4 mr-1" /> Formulas CSV
+          </Button>
           <Button variant="secondary" size="sm" onClick={() => window.open('/templates/combined-template.json')}>
             <ArrowDownTrayIcon className="h-4 w-4 mr-1" /> Combined JSON
+          </Button>
+          <Button variant="secondary" size="sm" onClick={() => window.open('/templates/combined-template.csv')}>
+            <ArrowDownTrayIcon className="h-4 w-4 mr-1" /> Combined CSV
           </Button>
         </div>
       </Card>
@@ -265,8 +313,8 @@ export default function ImportPage() {
             onChange={(e) => { setMode(e.target.value as ImportMode); setPreview(null); setResult(null); setRawData(null) }}
             options={[
               { value: 'ingredients', label: 'Ingredients Only (JSON or CSV)' },
-              { value: 'formulas', label: 'Formulas Only (JSON)' },
-              { value: 'combined', label: 'Ingredients + Formulas (JSON)' },
+              { value: 'formulas', label: 'Formulas Only (JSON or CSV)' },
+              { value: 'combined', label: 'Ingredients + Formulas (JSON or CSV)' },
             ]}
           />
 
@@ -281,7 +329,7 @@ export default function ImportPage() {
             <input
               ref={fileInputRef}
               type="file"
-              accept={mode === 'ingredients' ? '.json,.csv' : '.json'}
+              accept=".json,.csv"
               onChange={handleFileSelect}
               className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
             />
