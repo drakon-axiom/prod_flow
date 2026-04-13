@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useIngredients, useToggleIngredient } from '../../../api/ingredients'
+import { useIngredients, useToggleIngredient, useDeleteIngredient } from '../../../api/ingredients'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { DataTable } from '../../../components/ui/DataTable'
 import { Badge } from '../../../components/ui/Badge'
 import { Input } from '../../../components/ui/Input'
+import { Modal } from '../../../components/ui/Modal'
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner'
 import { useToast } from '../../../components/ui/Toast'
 import { PlusIcon } from '@heroicons/react/24/outline'
@@ -17,6 +18,8 @@ export default function IngredientsListPage() {
   const [showInactive, setShowInactive] = useState(false)
   const { data: ingredients, isLoading } = useIngredients(showInactive)
   const toggleMutation = useToggleIngredient()
+  const deleteMutation = useDeleteIngredient()
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
 
   const filtered = ingredients?.filter((i) =>
     i.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -28,6 +31,14 @@ export default function IngredientsListPage() {
       { id, is_active: !currentlyActive },
       { onSuccess: () => toast('success', currentlyActive ? 'Ingredient deactivated' : 'Ingredient reactivated') },
     )
+  }
+
+  function handleDelete() {
+    if (!confirmDelete) return
+    deleteMutation.mutate(confirmDelete.id, {
+      onSuccess: () => { toast('success', `Deleted ${confirmDelete.name}`); setConfirmDelete(null) },
+      onError: (err) => toast('error', err.message),
+    })
   }
 
   if (isLoading) return <LoadingSpinner text="Loading ingredients..." />
@@ -90,18 +101,29 @@ export default function IngredientsListPage() {
               key: 'actions',
               header: '',
               render: (r) => (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => { e.stopPropagation(); handleToggle(r.id, r.is_active) }}
-                >
-                  {r.is_active ? 'Deactivate' : 'Reactivate'}
-                </Button>
+                <div className="flex gap-1">
+                  <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleToggle(r.id, r.is_active) }}>
+                    {r.is_active ? 'Deactivate' : 'Reactivate'}
+                  </Button>
+                  <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setConfirmDelete({ id: r.id, name: r.name }) }}>
+                    Delete
+                  </Button>
+                </div>
               ),
             },
           ]}
         />
       </Card>
+
+      <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Ingredient">
+        <p className="text-sm text-gray-600 mb-4">
+          Are you sure you want to permanently delete <strong>{confirmDelete?.name}</strong>? This will fail if the ingredient is used in any formula.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="danger" onClick={handleDelete} loading={deleteMutation.isPending}>Delete</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+        </div>
+      </Modal>
     </div>
   )
 }

@@ -70,6 +70,17 @@ export function useUpdateIngredient() {
   })
 }
 
+export function useDeleteIngredient() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('ingredients').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
 export function useToggleIngredient() {
   const qc = useQueryClient()
   return useMutation({

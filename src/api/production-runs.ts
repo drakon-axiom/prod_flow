@@ -72,6 +72,20 @@ export function useCompleteStep() {
   })
 }
 
+export function useDeleteRun() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('production_runs').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: queryKeys.queue.all })
+    },
+  })
+}
+
 export function usePauseRun() {
   const qc = useQueryClient()
   return useMutation({

@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useQueue, useCreateQueueItem, useUpdateQueueItem } from '../../api/production-queue'
+import { useQueue, useCreateQueueItem, useUpdateQueueItem, useDeleteQueueItem } from '../../api/production-queue'
 import { useFormulas } from '../../api/formulas'
 import { useAuth } from '../../hooks/useAuth'
 import { Button } from '../../components/ui/Button'
@@ -30,6 +30,7 @@ export default function QueuePage() {
   const { data: formulas } = useFormulas()
   const createItem = useCreateQueueItem()
   const updateItem = useUpdateQueueItem()
+  const deleteItem = useDeleteQueueItem()
 
   const [form, setForm] = useState({ formula_id: '', batch_size: '', priority: '0', due_date: '', notes: '' })
   const [startingRunId, setStartingRunId] = useState<string | null>(null)
@@ -149,20 +150,28 @@ export default function QueuePage() {
               key: 'actions',
               header: '',
               render: (r) =>
-                (r.status === 'queued' || r.status === 'ready') ? (
-                  <div className="flex gap-2">
-                    <Button size="sm" loading={startingRunId === r.id} disabled={!!startingRunId} onClick={(e) => { e.stopPropagation(); handleStartRun(r.id) }}>
-                      <PlayIcon className="h-3.5 w-3.5 mr-1" />
-                      Start
-                    </Button>
-                    <Button variant="ghost" size="sm" onClick={(e) => {
-                      e.stopPropagation()
-                      updateItem.mutate({ id: r.id, status: 'cancelled' }, { onSuccess: () => toast('success', 'Cancelled') })
-                    }}>
-                      Cancel
-                    </Button>
-                  </div>
-                ) : null,
+                <div className="flex gap-1">
+                  {(r.status === 'queued' || r.status === 'ready') && (
+                    <>
+                      <Button size="sm" loading={startingRunId === r.id} disabled={!!startingRunId} onClick={(e) => { e.stopPropagation(); handleStartRun(r.id) }}>
+                        <PlayIcon className="h-3.5 w-3.5 mr-1" />
+                        Start
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={(e) => {
+                        e.stopPropagation()
+                        updateItem.mutate({ id: r.id, status: 'cancelled' }, { onSuccess: () => toast('success', 'Cancelled') })
+                      }}>
+                        Cancel
+                      </Button>
+                    </>
+                  )}
+                  <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={(e) => {
+                    e.stopPropagation()
+                    deleteItem.mutate(r.id, { onSuccess: () => toast('success', 'Deleted'), onError: (err) => toast('error', err.message) })
+                  }}>
+                    Delete
+                  </Button>
+                </div>,
             },
           ]}
         />

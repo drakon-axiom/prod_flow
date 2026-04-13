@@ -1,14 +1,28 @@
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useFormulas } from '../../../api/formulas'
+import { useFormulas, useDeleteFormula } from '../../../api/formulas'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { DataTable } from '../../../components/ui/DataTable'
+import { Modal } from '../../../components/ui/Modal'
 import { LoadingSpinner } from '../../../components/ui/LoadingSpinner'
+import { useToast } from '../../../components/ui/Toast'
 import { PlusIcon } from '@heroicons/react/24/outline'
 
 export default function FormulasListPage() {
   const navigate = useNavigate()
+  const { toast } = useToast()
   const { data: formulas, isLoading } = useFormulas()
+  const deleteMutation = useDeleteFormula()
+  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
+
+  function handleDelete() {
+    if (!confirmDelete) return
+    deleteMutation.mutate(confirmDelete.id, {
+      onSuccess: () => { toast('success', `Deleted ${confirmDelete.name}`); setConfirmDelete(null) },
+      onError: (err) => toast('error', err.message),
+    })
+  }
 
   if (isLoading) return <LoadingSpinner text="Loading formulas..." />
 
@@ -55,9 +69,28 @@ export default function FormulasListPage() {
               header: 'Created',
               render: (r) => new Date(r.created_at).toLocaleDateString(),
             },
+            {
+              key: 'actions',
+              header: '',
+              render: (r) => (
+                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={(e) => { e.stopPropagation(); setConfirmDelete({ id: r.id, name: r.name }) }}>
+                  Delete
+                </Button>
+              ),
+            },
           ]}
         />
       </Card>
+
+      <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete Formula">
+        <p className="text-sm text-gray-600 mb-4">
+          Are you sure you want to permanently delete <strong>{confirmDelete?.name}</strong> and all its versions? This will fail if the formula has active queue items or runs.
+        </p>
+        <div className="flex gap-3">
+          <Button variant="danger" onClick={handleDelete} loading={deleteMutation.isPending}>Delete</Button>
+          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancel</Button>
+        </div>
+      </Modal>
     </div>
   )
 }

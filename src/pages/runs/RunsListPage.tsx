@@ -1,18 +1,22 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useRuns } from '../../api/production-runs'
+import { useRuns, useDeleteRun } from '../../api/production-runs'
+import { Button } from '../../components/ui/Button'
 import { Card } from '../../components/ui/Card'
 import { DataTable } from '../../components/ui/DataTable'
 import { Badge } from '../../components/ui/Badge'
 import { LoadingSpinner } from '../../components/ui/LoadingSpinner'
+import { useToast } from '../../components/ui/Toast'
 import { RUN_STATUS_COLORS, type RunStatus } from '../../types/constants'
 
 const STATUS_TABS = ['all', 'in_progress', 'paused', 'completed', 'cancelled'] as const
 
 export default function RunsListPage() {
   const navigate = useNavigate()
+  const { toast } = useToast()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const { data: runs, isLoading } = useRuns(statusFilter)
+  const deleteRun = useDeleteRun()
 
   if (isLoading) return <LoadingSpinner text="Loading runs..." />
 
@@ -66,6 +70,21 @@ export default function RunsListPage() {
               key: 'started_at',
               header: 'Started',
               render: (r) => new Date(r.started_at).toLocaleString(),
+            },
+            {
+              key: 'actions',
+              header: '',
+              render: (r) => (
+                <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={(e) => {
+                  e.stopPropagation()
+                  deleteRun.mutate(r.id, {
+                    onSuccess: () => toast('success', 'Run deleted'),
+                    onError: (err) => toast('error', err.message),
+                  })
+                }}>
+                  Delete
+                </Button>
+              ),
             },
           ]}
         />

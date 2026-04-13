@@ -41,6 +41,17 @@ export function useCreateQueueItem() {
   })
 }
 
+export function useDeleteQueueItem() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('production_queue').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
 export function useUpdateQueueItem() {
   const qc = useQueryClient()
   return useMutation({
