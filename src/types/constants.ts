@@ -30,6 +30,7 @@ export const RUN_STATUS_COLORS: Record<RunStatus, string> = {
 }
 
 export const UNIT_OPTIONS = [
+  { value: 'mg', label: 'Milligrams (mg)' },
   { value: 'g', label: 'Grams (g)' },
   { value: 'kg', label: 'Kilograms (kg)' },
   { value: 'ml', label: 'Milliliters (ml)' },
