@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { useFieldTemplates, useCreateFieldTemplate, useUpdateFieldTemplate, useToggleFieldTemplate } from '../../../api/field-templates'
+import { useFieldTemplates, useCreateFieldTemplate, useUpdateFieldTemplate, useToggleFieldTemplate, useDeleteFieldTemplate } from '../../../api/field-templates'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
 import { DataTable } from '../../../components/ui/DataTable'
@@ -31,6 +31,7 @@ export default function FieldTemplatesPage() {
   const createMutation = useCreateFieldTemplate()
   const updateMutation = useUpdateFieldTemplate()
   const toggleMutation = useToggleFieldTemplate()
+  const deleteMutation = useDeleteFieldTemplate()
 
   const [modalOpen, setModalOpen] = useState(false)
   const [form, setForm] = useState<FormState>(emptyForm)
@@ -134,19 +135,35 @@ export default function FieldTemplatesPage() {
               key: 'actions',
               header: '',
               render: (r) => (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    toggleMutation.mutate(
-                      { id: r.id, is_active: !r.is_active },
-                      { onSuccess: () => toast('success', r.is_active ? 'Deactivated' : 'Reactivated') },
-                    )
-                  }}
-                >
-                  {r.is_active ? 'Deactivate' : 'Reactivate'}
-                </Button>
+                <div className="flex gap-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      toggleMutation.mutate(
+                        { id: r.id, is_active: !r.is_active },
+                        { onSuccess: () => toast('success', r.is_active ? 'Deactivated' : 'Reactivated') },
+                      )
+                    }}
+                  >
+                    {r.is_active ? 'Deactivate' : 'Reactivate'}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      deleteMutation.mutate(r.id, {
+                        onSuccess: () => toast('success', `Deleted ${r.name}`),
+                        onError: (err) => toast('error', err.message),
+                      })
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </div>
               ),
             },
           ]}

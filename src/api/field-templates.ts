@@ -51,6 +51,20 @@ export function useUpdateFieldTemplate() {
   })
 }
 
+export function useDeleteFieldTemplate() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      // Null out template_id on formula_step_fields that reference this template
+      // (the fields keep their own label/type/options, template_id is just a reference)
+      await supabase.from('formula_step_fields').update({ template_id: null }).eq('template_id', id)
+      const { error } = await supabase.from('step_field_templates').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+  })
+}
+
 export function useToggleFieldTemplate() {
   const qc = useQueryClient()
   return useMutation({
