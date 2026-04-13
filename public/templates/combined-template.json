@@ -1,0 +1,44 @@
+{
+  "ingredients": [
+    {
+      "name": "Purified Water",
+      "sku": "RM-001",
+      "unit": "kg",
+      "density": 1.0,
+      "cost_per_unit": 0.005,
+      "notes": "USP grade"
+    },
+    {
+      "name": "Fragrance Oil - Lavender",
+      "sku": "RM-010",
+      "unit": "g",
+      "density": 0.95,
+      "cost_per_unit": 0.12,
+      "notes": "Natural essential oil blend"
+    }
+  ],
+  "formulas": [
+    {
+      "name": "Lavender Body Wash",
+      "product_name": "LBW-500ml",
+      "description": "Gentle daily body wash with lavender essential oil",
+      "base_batch_size": 10,
+      "base_batch_unit": "kg",
+      "ingredients": [
+        { "ingredient_name": "Purified Water", "quantity": 6500, "notes": "Main solvent" },
+        { "ingredient_name": "Fragrance Oil - Lavender", "quantity": 150, "notes": "Add at cool-down" }
+      ],
+      "steps": [
+        {
+          "title": "Heat Water Phase",
+          "instructions": "Heat purified water to 70-75°C in the main vessel.",
+          "requires_confirmation": true,
+          "requires_quantity_entry": false,
+          "fields": [
+            { "label": "Temperature (°C)", "field_type": "number", "is_required": true }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+[
+  {
+    "name": "Purified Water",
+    "sku": "RM-001",
+    "unit": "kg",
+    "density": 1.0,
+    "cost_per_unit": 0.005,
+    "notes": "USP grade"
+  },
+  {
+    "name": "Fragrance Oil - Lavender",
+    "sku": "RM-010",
+    "unit": "g",
+    "density": 0.95,
+    "cost_per_unit": 0.12,
+    "notes": "Natural essential oil blend"
+  }
+]

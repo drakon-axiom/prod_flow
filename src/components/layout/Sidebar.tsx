@@ -7,6 +7,7 @@ import {
   CubeIcon,
   UsersIcon,
   AdjustmentsHorizontalIcon,
+  ArrowUpTrayIcon,
 } from '@heroicons/react/24/outline'
 import { cn } from '../../utils/cn'
 import { useAuth } from '../../hooks/useAuth'
@@ -22,6 +23,7 @@ const adminItems = [
   { to: '/admin/formulas', label: 'Formulas', icon: BeakerIcon },
   { to: '/admin/users', label: 'Users', icon: UsersIcon },
   { to: '/admin/field-templates', label: 'Field Templates', icon: AdjustmentsHorizontalIcon },
+  { to: '/admin/import', label: 'Import Data', icon: ArrowUpTrayIcon },
 ]
 
 function SidebarLink({ to, label, icon: Icon }: { to: string; label: string; icon: typeof HomeIcon }) {

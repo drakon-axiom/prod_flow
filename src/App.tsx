@@ -24,6 +24,7 @@ const FormulaEditorPage = lazy(() => import('./pages/admin/formulas/FormulaEdito
 const UsersListPage = lazy(() => import('./pages/admin/users/UsersListPage'))
 const UserFormPage = lazy(() => import('./pages/admin/users/UserFormPage'))
 const UserEditPage = lazy(() => import('./pages/admin/users/UserEditPage'))
+const ImportPage = lazy(() => import('./pages/admin/ImportPage'))
 const FieldTemplatesPage = lazy(() => import('./pages/admin/field-templates/FieldTemplatesPage'))
 
 const queryClient = new QueryClient({
@@ -87,6 +88,7 @@ export default function App() {
                         <Route path="/admin/users/new" element={<UserFormPage />} />
                         <Route path="/admin/users/:id" element={<UserEditPage />} />
                         <Route path="/admin/field-templates" element={<FieldTemplatesPage />} />
+                      <Route path="/admin/import" element={<ImportPage />} />
                       </Route>
                     </Route>
                   </Route>
