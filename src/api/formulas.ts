@@ -75,10 +75,27 @@ export function useDeleteFormula() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
+      // Null out formula references on production runs (runs are self-contained snapshots)
+      await supabase.from('production_runs').update({ formula_id: null, formula_version_id: null }).eq('formula_id', id)
+      // Delete queue items referencing this formula
+      // First null out run references to those queue items
+      const { data: queueItems } = await supabase.from('production_queue').select('id').eq('formula_id', id)
+      if (queueItems?.length) {
+        const queueIds = queueItems.map((q) => q.id)
+        await supabase.from('production_runs').update({ queue_item_id: null }).in('queue_item_id', queueIds)
+        await supabase.from('production_queue').delete().eq('formula_id', id)
+      }
+      // Clear the self-referencing current_version_id FK
+      await supabase.from('formulas').update({ current_version_id: null }).eq('id', id)
+      // Now delete formula (CASCADE handles versions → ingredients → steps → fields)
       const { error } = await supabase.from('formulas').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: queryKeys.queue.all })
+      qc.invalidateQueries({ queryKey: queryKeys.runs.all })
+    },
   })
 }
 

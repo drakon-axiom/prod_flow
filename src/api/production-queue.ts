@@ -45,10 +45,15 @@ export function useDeleteQueueItem() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
+      // Null out queue_item_id on any runs referencing this queue item (runs are snapshots)
+      await supabase.from('production_runs').update({ queue_item_id: null }).eq('queue_item_id', id)
       const { error } = await supabase.from('production_queue').delete().eq('id', id)
       if (error) throw error
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: queryKeys.runs.all })
+    },
   })
 }
 

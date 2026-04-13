@@ -74,6 +74,16 @@ export function useDeleteIngredient() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
+      // Check if ingredient is used in any formula
+      const { count } = await supabase
+        .from('formula_ingredients')
+        .select('id', { count: 'exact', head: true })
+        .eq('ingredient_id', id)
+      if (count && count > 0) {
+        throw new Error('Cannot delete: this ingredient is used in one or more formulas. Remove it from all formulas first.')
+      }
+      // Null out ingredient_id on run_materials (snapshots keep ingredient_name independently)
+      await supabase.from('run_materials').update({ ingredient_id: null }).eq('ingredient_id', id)
       const { error } = await supabase.from('ingredients').delete().eq('id', id)
       if (error) throw error
     },
