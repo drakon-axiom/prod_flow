@@ -22,7 +22,7 @@ const STATUS_TABS = ['all', 'queued', 'ready', 'in_progress', 'completed', 'canc
 export default function QueuePage() {
   const navigate = useNavigate()
   const { toast } = useToast()
-  const { user } = useAuth()
+  const { user, profile } = useAuth()
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [addModalOpen, setAddModalOpen] = useState(false)
 
@@ -76,7 +76,6 @@ export default function QueuePage() {
     try {
       const { data, error } = await supabase.rpc(RPC.START_RUN, {
         p_queue_item_id: queueItemId,
-        p_user_id: user.id,
       })
       if (error) throw error
       toast('success', 'Run started')
@@ -159,18 +158,21 @@ export default function QueuePage() {
                       </Button>
                       <Button variant="ghost" size="sm" onClick={(e) => {
                         e.stopPropagation()
-                        updateItem.mutate({ id: r.id, status: 'cancelled' }, { onSuccess: () => toast('success', 'Cancelled') })
+                        updateItem.mutate({ id: r.id, status: 'cancelled' }, {
+                          onSuccess: () => toast('success', 'Cancelled'),
+                          onError: (err) => toast('error', err.message),
+                        })
                       }}>
                         Cancel
                       </Button>
                     </>
                   )}
-                  <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={(e) => {
+                  {profile?.role === 'admin' && ['queued', 'ready', 'cancelled'].includes(r.status) && <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700" onClick={(e) => {
                     e.stopPropagation()
                     deleteItem.mutate(r.id, { onSuccess: () => toast('success', 'Deleted'), onError: (err) => toast('error', err.message) })
                   }}>
                     Delete
-                  </Button>
+                  </Button>}
                 </div>,
             },
           ]}

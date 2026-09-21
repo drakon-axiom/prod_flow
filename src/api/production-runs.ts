@@ -54,12 +54,13 @@ export function useRun(id: string | undefined) {
 export function useCompleteStep() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (args: { run_id: string; step_id: string; user_id: string; inputs: { id: string; value: string }[] }) => {
+    mutationFn: async (args: { run_id: string; step_id: string; inputs: { id: string; value: string }[]; confirmed: boolean; quantity: number | null }) => {
       const { data, error } = await supabase.rpc(RPC.COMPLETE_STEP, {
         p_run_id: args.run_id,
         p_step_id: args.step_id,
-        p_user_id: args.user_id,
         p_inputs: args.inputs,
+        p_confirmed: args.confirmed,
+        p_quantity: args.quantity ?? undefined,
       })
       if (error) throw error
       return data as { step_id: string; status: string; run_completed: boolean; next_step_index: number }
@@ -72,30 +73,17 @@ export function useCompleteStep() {
   })
 }
 
-export function useDeleteRun() {
-  const qc = useQueryClient()
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from('production_runs').delete().eq('id', id)
-      if (error) throw error
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: KEYS.all })
-      qc.invalidateQueries({ queryKey: queryKeys.queue.all })
-    },
-  })
-}
-
 export function usePauseRun() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, status }: { id: string; status: 'paused' | 'in_progress' | 'cancelled' }) => {
-      const { error } = await supabase.from('production_runs').update({ status }).eq('id', id)
+      const { error } = await supabase.rpc('change_run_status', { p_run_id: id, p_status: status })
       if (error) throw error
     },
     onSuccess: (_data, vars) => {
       qc.invalidateQueries({ queryKey: KEYS.detail(vars.id) })
       qc.invalidateQueries({ queryKey: KEYS.all })
+      qc.invalidateQueries({ queryKey: queryKeys.queue.all })
     },
   })
 }

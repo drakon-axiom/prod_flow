@@ -99,6 +99,8 @@ export default function RunDetailPage() {
                   Completed {new Date(step.completed_at).toLocaleString()}
                 </p>
               )}
+              {step.confirmed && <p className="text-xs text-gray-600 mt-1">Step completion confirmed.</p>}
+              {step.entered_quantity !== null && <p className="text-xs text-gray-600 mt-1">Recorded quantity: {step.entered_quantity}</p>}
               {step.inputs && step.inputs.length > 0 && step.status === 'completed' && (
                 <div className="mt-2 space-y-1">
                   {step.inputs.map((inp) => (

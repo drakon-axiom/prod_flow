@@ -11,11 +11,13 @@ interface StepExecutionCardProps {
   isCurrentStep: boolean
   isCompleted: boolean
   isLastStep: boolean
-  onComplete: (inputs: { id: string; value: string }[]) => void
+  onComplete: (inputs: { id: string; value: string }[], confirmed: boolean, quantity: number | null) => void
   completing: boolean
 }
 
 export function StepExecutionCard({ step, isCurrentStep, isCompleted, isLastStep, onComplete, completing }: StepExecutionCardProps) {
+  const [confirmed, setConfirmed] = useState(false)
+  const [quantity, setQuantity] = useState('')
   const [values, setValues] = useState<Record<string, string>>(() => {
     const initial: Record<string, string> = {}
     step.inputs?.forEach((inp) => {
@@ -26,12 +28,14 @@ export function StepExecutionCard({ step, isCurrentStep, isCompleted, isLastStep
 
   function handleComplete() {
     const inputs = Object.entries(values).map(([id, value]) => ({ id, value }))
-    onComplete(inputs)
+    onComplete(inputs, confirmed, quantity.trim() === '' ? null : Number(quantity))
   }
 
   const allRequiredFilled = step.inputs
     ?.filter((inp) => inp.is_required)
-    .every((inp) => values[inp.id]?.trim()) ?? true
+    .every((inp) => inp.field_type === 'checkbox' ? values[inp.id] === 'true' : values[inp.id]?.trim()) ?? true
+  const canComplete = allRequiredFilled && (!step.requires_confirmation || confirmed) &&
+    (!step.requires_quantity_entry || (quantity.trim() !== '' && Number.isFinite(Number(quantity)) && Number(quantity) >= 0))
 
   if (isCompleted) {
     return (
@@ -54,6 +58,8 @@ export function StepExecutionCard({ step, isCurrentStep, isCompleted, isLastStep
             ))}
           </div>
         )}
+        {step.confirmed && <p className="ml-7 text-xs text-gray-500">Step completion confirmed.</p>}
+        {step.entered_quantity !== null && <p className="ml-7 text-xs text-gray-500">Recorded quantity: {step.entered_quantity}</p>}
       </Card>
     )
   }
@@ -129,11 +135,23 @@ export function StepExecutionCard({ step, isCurrentStep, isCompleted, isLastStep
         </div>
       )}
 
+      {isCurrentStep && step.requires_quantity_entry && (
+        <div className="mb-4">
+          <Input label="Quantity for this step (use the unit in the instructions)" type="number" min="0" step="any"
+            value={quantity} onChange={(e) => setQuantity(e.target.value)} required />
+        </div>
+      )}
+      {isCurrentStep && step.requires_confirmation && (
+        <label className="flex items-center gap-2 mb-4 text-sm">
+          <input type="checkbox" checked={confirmed} onChange={(e) => setConfirmed(e.target.checked)} />
+          I completed this step according to its instructions.
+        </label>
+      )}
       {isCurrentStep && (
         <Button
           onClick={handleComplete}
           loading={completing}
-          disabled={!allRequiredFilled}
+          disabled={!canComplete}
           className="w-full"
           size="lg"
         >
