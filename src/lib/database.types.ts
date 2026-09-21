@@ -539,6 +539,8 @@ export type Database = {
       }
       run_steps: {
         Row: {
+          confirmed: boolean
+          entered_quantity: number | null
           completed_at: string | null
           completed_by: string | null
           id: string
@@ -553,6 +555,8 @@ export type Database = {
           title: string
         }
         Insert: {
+          confirmed?: boolean
+          entered_quantity?: number | null
           completed_at?: string | null
           completed_by?: string | null
           id?: string
@@ -567,6 +571,8 @@ export type Database = {
           title: string
         }
         Update: {
+          confirmed?: boolean
+          entered_quantity?: number | null
           completed_at?: string | null
           completed_by?: string | null
           id?: string
@@ -634,17 +640,27 @@ export type Database = {
       }
       complete_run_step: {
         Args: {
+          p_confirmed?: boolean
+          p_quantity?: number
           p_inputs?: Json
           p_run_id: string
           p_step_id: string
-          p_user_id: string
+          p_user_id?: string
         }
         Returns: Json
       }
       get_user_role: { Args: never; Returns: string }
       start_production_run: {
-        Args: { p_queue_item_id: string; p_user_id: string }
+        Args: { p_queue_item_id: string; p_user_id?: string }
         Returns: string
+      }
+      change_run_status: {
+        Args: { p_run_id: string; p_status: string }
+        Returns: undefined
+      }
+      admin_update_profile: {
+        Args: { p_user_id: string; p_name?: string; p_role?: string; p_is_active?: boolean }
+        Returns: undefined
       }
     }
     Enums: {

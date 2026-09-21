@@ -49,8 +49,9 @@ export default function UserEditPage() {
     setPasswordMutation.mutate(
       { user_id: id!, password: newPassword },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           toast('success', 'Password updated')
+          if (result?.warning) toast('error', result.warning)
           setNewPassword('')
         },
         onError: (err) => toast('error', err.message),
@@ -95,7 +96,7 @@ export default function UserEditPage() {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Minimum 6 characters"
+            placeholder="Minimum 8 characters"
             minLength={8}
           />
           <Button type="submit" loading={setPasswordMutation.isPending} disabled={newPassword.length < 8}>

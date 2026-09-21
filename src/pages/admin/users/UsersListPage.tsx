@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useUsers, useUpdateUser, useSetPassword, useDeleteUser } from '../../../api/users'
+import { useUsers, useUpdateUser, useSetPassword } from '../../../api/users'
 import { useAuth } from '../../../hooks/useAuth'
 import { Button } from '../../../components/ui/Button'
 import { Card } from '../../../components/ui/Card'
@@ -19,35 +19,20 @@ export default function UsersListPage() {
   const { data: users, isLoading } = useUsers()
   const updateUser = useUpdateUser()
   const setPassword = useSetPassword()
-  const deleteUser = useDeleteUser()
 
   const [passwordModal, setPasswordModal] = useState<{ id: string; name: string } | null>(null)
   const [newPassword, setNewPassword] = useState('')
-  const [confirmDelete, setConfirmDelete] = useState<{ id: string; name: string } | null>(null)
 
   function handleSetPassword() {
     if (!passwordModal || newPassword.length < 8) return
     setPassword.mutate(
       { user_id: passwordModal.id, password: newPassword },
       {
-        onSuccess: () => {
+        onSuccess: (result) => {
           toast('success', `Password updated for ${passwordModal.name}`)
+          if (result?.warning) toast('error', result.warning)
           setPasswordModal(null)
           setNewPassword('')
-        },
-        onError: (err) => toast('error', err.message),
-      },
-    )
-  }
-
-  function handleDelete() {
-    if (!confirmDelete) return
-    deleteUser.mutate(
-      { user_id: confirmDelete.id },
-      {
-        onSuccess: () => {
-          toast('success', `User ${confirmDelete.name} deleted`)
-          setConfirmDelete(null)
         },
         onError: (err) => toast('error', err.message),
       },
@@ -65,6 +50,8 @@ export default function UsersListPage() {
           Add User
         </Button>
       </div>
+
+      <p className="text-sm text-gray-600 mb-4">Deactivate removes access while keeping the person's production history. User records are retained.</p>
 
       <Card padding={false}>
         <DataTable
@@ -115,26 +102,20 @@ export default function UsersListPage() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      disabled={isSelf}
                       onClick={(e) => {
                         e.stopPropagation()
                         updateUser.mutate(
                           { user_id: r.id, is_active: !r.is_active },
-                          { onSuccess: () => toast('success', r.is_active ? 'Deactivated' : 'Reactivated') },
+                          {
+                            onSuccess: () => toast('success', r.is_active ? 'Deactivated' : 'Reactivated'),
+                            onError: (err) => toast('error', err.message),
+                          },
                         )
                       }}
                     >
                       {r.is_active ? 'Deactivate' : 'Reactivate'}
                     </Button>
-                    {!isSelf && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={(e) => { e.stopPropagation(); setConfirmDelete({ id: r.id, name: r.name }) }}
-                      >
-                        Delete
-                      </Button>
-                    )}
                   </div>
                 )
               },
@@ -151,7 +132,7 @@ export default function UsersListPage() {
             type="password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Minimum 6 characters"
+            placeholder="Minimum 8 characters"
             minLength={8}
           />
           <div className="flex gap-3">
@@ -165,18 +146,6 @@ export default function UsersListPage() {
         </div>
       </Modal>
 
-      {/* Delete Confirmation Modal */}
-      <Modal open={!!confirmDelete} onClose={() => setConfirmDelete(null)} title="Delete User">
-        <p className="text-sm text-gray-600 mb-4">
-          Are you sure you want to permanently delete <strong>{confirmDelete?.name}</strong>? This will remove their auth account and profile. This cannot be undone.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="danger" onClick={handleDelete} loading={deleteUser.isPending}>
-            Delete User
-          </Button>
-          <Button variant="secondary" onClick={() => setConfirmDelete(null)}>Cancel</Button>
-        </div>
-      </Modal>
     </div>
   )
 }

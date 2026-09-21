@@ -45,10 +45,9 @@ export function useDeleteQueueItem() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async (id: string) => {
-      // Null out queue_item_id on any runs referencing this queue item (runs are snapshots)
-      await supabase.from('production_runs').update({ queue_item_id: null }).eq('queue_item_id', id)
-      const { error } = await supabase.from('production_queue').delete().eq('id', id)
+      const { data, error } = await supabase.from('production_queue').delete().eq('id', id).select('id')
       if (error) throw error
+      if (!data?.length) throw new Error('Only an administrator can remove a queue item that has not started.')
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: KEYS.all })
@@ -61,8 +60,9 @@ export function useUpdateQueueItem() {
   const qc = useQueryClient()
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; status?: string; priority?: number }) => {
-      const { error } = await supabase.from('production_queue').update(updates).eq('id', id)
+      const { data, error } = await supabase.from('production_queue').update(updates).eq('id', id).select('id')
       if (error) throw error
+      if (!data?.length) throw new Error('This item has already started. Open its production run to pause or cancel it.')
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: KEYS.all }),
   })

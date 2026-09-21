@@ -26,10 +26,10 @@ export default function ActiveRunPage() {
 
   const { run, steps, totalSteps, completedSteps, currentStep, isLastStep, isCompleted } = derived
 
-  function handleComplete(inputs: { id: string; value: string }[]) {
+  function handleComplete(inputs: { id: string; value: string }[], confirmed: boolean, quantity: number | null) {
     if (!currentStep || !user || !id) return
     completeStep.mutate(
-      { run_id: id, step_id: currentStep.id, user_id: user.id, inputs },
+      { run_id: id, step_id: currentStep.id, inputs, confirmed, quantity },
       {
         onSuccess: (result) => {
           if (result.run_completed) {
@@ -48,7 +48,10 @@ export default function ActiveRunPage() {
     const newStatus = run.status === 'paused' ? 'in_progress' : 'paused'
     pauseRun.mutate(
       { id, status: newStatus },
-      { onSuccess: () => toast('info', newStatus === 'paused' ? 'Run paused' : 'Run resumed') },
+      {
+        onSuccess: () => toast('info', newStatus === 'paused' ? 'Run paused' : 'Run resumed'),
+        onError: (err) => toast('error', err.message),
+      },
     )
   }
 
@@ -56,7 +59,10 @@ export default function ActiveRunPage() {
     if (!id) return
     pauseRun.mutate(
       { id, status: 'cancelled' },
-      { onSuccess: () => { toast('info', 'Run cancelled'); navigate('/runs') } },
+      {
+        onSuccess: () => { toast('info', 'Run cancelled'); navigate('/runs') },
+        onError: (err) => toast('error', err.message),
+      },
     )
   }
 

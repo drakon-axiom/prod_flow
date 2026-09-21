@@ -18,6 +18,11 @@ export function ProtectedRoute({ requiredRole }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />
   }
 
+  if (!profile?.is_active) {
+    return <div className="p-8"><h1 className="text-xl font-semibold">Staff access is unavailable</h1>
+      <p className="mt-2">Ask an administrator to confirm that your staff account is active.</p></div>
+  }
+
   if (requiredRole && profile?.role !== requiredRole) {
     return <Navigate to="/dashboard" replace />
   }
